@@ -4,10 +4,13 @@ const User = require('./schema')
 
 const app = express()
 
+//server port
 const PORT = 8000;
+const uri = "mongodb+srv://ashok:ashok@cluster0.lw48m.mongodb.net/<dbname>?retryWrites=true&w=majority";
 
 app.use(express.json())
 app.use(express.urlencoded(true))
+
 
 app.post('/signup', async (req, res) => {
     const {name, age, email, password, passwordtwo} = req.body;
@@ -48,16 +51,12 @@ app.post('/signup', async (req, res) => {
     }
 
 
-
 })
 
-mongoose.connect('https://mongodb+srv://ashok:ashok@cluster0.lw48m.mongodb.net/<dbname>?retryWrites=true&w=majority', 
-    { 
-        useNewUrlParser: true 
-    },
-    ()=> {
-    console.log('connected to DB')
-})
+mongoose.connect(uri, { useNewUrlParser: true , useUnifiedTopology: true })
+.then(() => console.log('Connected to DataBase'))
+.catch((err) => console.log(err))
+
 app.listen(PORT, () => {
     console.log('listening to port: ', PORT);
 })
