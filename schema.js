@@ -17,10 +17,6 @@ const newUser = new Schema({
     password: {
         type: String,
         required: true
-    },
-    passwordtwo: {
-        type: String,
-        required: true
     }
 }, { timestamps: true})
 
