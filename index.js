@@ -1,56 +1,71 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const User = require('./schema')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 const app = express()
 
-//server port
 const PORT = 8000;
-const uri = "mongodb+srv://ashok:ashok@cluster0.lw48m.mongodb.net/<dbname>?retryWrites=true&w=majority";
 
 app.use(express.json())
 app.use(express.urlencoded(true))
 
+const uri = "mongodb+srv://ashok:ashok@cluster0.lw48m.mongodb.net/<dbname>?retryWrites=true&w=majority";
 
 app.post('/signup', async (req, res) => {
-    const {name, age, email, password, passwordtwo} = req.body;
-
-    if(!name || !age || !email || !password || !passwordtwo) {
-        return res.status(400).send("Please fill the All fields")
-    }
-
-    if(name.length < 10) {
-        return res.status(400).send("Name length should be greater than 10 letters")
-    }
-    if(age < 0 || age > 100) {
-        res.status(400).send("age should be less than 32 or greater than 8 years")
-    }
-
-    if(password.length < 8 || password.length > 32) {
-        res.status(400).send("Password lenth should be less than 32 and greater than 8 charectes length")
-    }
-
-    if(password !== password) {
-        res.send(400).send("password not matches")
-    }
-
-    const newuser = await new User({
-        name: req.body,
-        age: req.body,
-        email: req.body,
-        password: req.body,
-        passwordtwo: req.body
-    }).save()
-
     try {
-        if(newuser) {
-            return res.status(200).send('Successfully created account')
+        const {name, age, email, password, passwordtwo} = req.body;
+
+        const user = await User.findOne({email})
+        if(user) {
+            return res.status(400).json({
+                msg: "email already exists"
+            })
         }
+
+        if(!name || !age || !email || !password || !passwordtwo) {
+            return res.status(400).json({msg: "please fill all fields"})
+        }
+
+        if(name.length < 8) {
+            return res.status(400).json({msg: "name length should more than 8 letters"})
+        }
+
+        if(password.length < 8 || password.length > 32 && passwordtwo.length < 8 || passwordtwo.length > 32) {
+            return res.status(400).json({msg: "password atleast 8 charecters long and not exceed 32 charecters"})
+        }
+
+        if(age===0) {
+            return res.status(400).json({msg: "Age should be greater than zero"})
+        }
+
+        function validateEmail(em) {
+            var re = /\S+@\S+\.\S+/;
+            return re.test(em);
+        }
+
+       const testEmail = validateEmail(email)
+       if(!testEmail) {
+           return res.status(400).json({msg: "please enter valid email address"})
+       }
+
+       if(password !== passwordtwo) {
+           return res.status(400).json({msg: "password does not match"})
+       }
+       const passwordHash = await bcrypt.hash(password, 10)
+
+       const newUser = new User({
+           name, age, email, password: passwordHash,
+       })
+
+       await newUser.save()
+
+       res.json({msg: "successfully created account"})
+
     } catch (err) {
-        return res.status(500).send({message: err})
+        res.status(500).json({msg: err.message})
     }
-
-
 })
 
 mongoose.connect(uri, { useNewUrlParser: true , useUnifiedTopology: true })
